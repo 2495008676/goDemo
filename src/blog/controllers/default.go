@@ -8,7 +8,7 @@ type MainController struct {
 	beego.Controller
 }
 
- //index.html  首页
+//index.html  首页
 func (c *MainController) Index() {
 	c.Data["Website"] = "beego.me"
 	c.Data["Email"] = "astaxie@gmail.com"
