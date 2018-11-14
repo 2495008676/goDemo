@@ -8,14 +8,12 @@ import (
 //用户表模型
 type User struct {
 	Id         int
-	UserName   string    `orm:"unique;size(15)"`
-	Password   string    `orm:"size(32)"`
-	Email      string    `orm:"size(50)"`
-	LastLogin  time.Time `orm:"auto_now_add;type(datetime)"`
+	UserName   string `orm:"unique;size(15)"`
+	Password   string `orm:"size(32)"`
+	Email      string `orm:"size(50)"`
 	LoginCount int
-	LastIp     string `orm:"size(32)"`
-	Authkey    string `orm:"size(10)"`
-	Active     int8
+	LastIp     string    `orm:"size(32)"`
+	LastLogin  time.Time `orm:"auto_now_add;type(datetime)"`
 }
 
 func (m *User) TableName() string {

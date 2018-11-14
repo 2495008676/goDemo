@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"blog/models/admin"
 	"github.com/astaxie/beego"
 	"strings"
 )
@@ -23,6 +22,7 @@ func (this *baseController) Prepare() {
 
 //登录状态验证
 func (this *baseController) auth() {
-	var user models.User
-	this.SetSession("userInfo", user)
+	if this.GetSession("userInfo") == nil && this.controllerName != "account" {
+		this.Redirect("/admin/account/login", 302)
+	}
 }

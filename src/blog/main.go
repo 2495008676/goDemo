@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "blog/models/admin"
 	_ "blog/routers/admin"
 	_ "blog/routers/blog"
 	"github.com/astaxie/beego"
