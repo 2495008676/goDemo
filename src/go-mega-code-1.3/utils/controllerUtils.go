@@ -1,9 +1,11 @@
-package controller
+package utils1
 
 import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/gorilla/sessions"
+	"github.com/spf13/viper"
 	"go-mega-code-1.3/config"
 	"go-mega-code-1.3/dto"
 	"go-mega-code-1.3/model"
@@ -18,9 +20,21 @@ import (
 	gomail "gopkg.in/gomail.v2"
 )
 
-func middleAuth(next http.HandlerFunc) http.HandlerFunc {
+var (
+	sessionName string
+	flashName   string
+	store       *sessions.CookieStore
+)
+
+func init() {
+	store = sessions.NewCookieStore([]byte("something-very-secret"))
+	sessionName = viper.GetString("sessionName")
+	flashName = viper.GetString("flashName")
+}
+
+func MiddleAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username, err := getSessionUser(r)
+		username, err := GetSessionUser(r)
 		log.Println("middle:", username)
 		if username != "" {
 			log.Println("Last seen:", username)
@@ -72,7 +86,7 @@ func PopulateTemplates() map[string]*template.Template {
 
 // session
 
-func getSessionUser(r *http.Request) (string, error) {
+func GetSessionUser(r *http.Request) (string, error) {
 	var username string
 	session, err := store.Get(r, sessionName)
 	if err != nil {
@@ -89,7 +103,7 @@ func getSessionUser(r *http.Request) (string, error) {
 	return username, nil
 }
 
-func setSessionUser(w http.ResponseWriter, r *http.Request, username string) error {
+func SetSessionUser(w http.ResponseWriter, r *http.Request, username string) error {
 	session, err := store.Get(r, sessionName)
 	if err != nil {
 		return err
@@ -102,7 +116,7 @@ func setSessionUser(w http.ResponseWriter, r *http.Request, username string) err
 	return nil
 }
 
-func clearSession(w http.ResponseWriter, r *http.Request) error {
+func ClearSession(w http.ResponseWriter, r *http.Request) error {
 	session, err := store.Get(r, sessionName)
 	if err != nil {
 		return err
@@ -119,7 +133,7 @@ func clearSession(w http.ResponseWriter, r *http.Request) error {
 }
 
 // Login Check
-func checkLen(fieldName, fieldValue string, minLen, maxLen int) string {
+func CheckLen(fieldName, fieldValue string, minLen, maxLen int) string {
 	lenField := len(fieldValue)
 	if lenField < minLen {
 		return fmt.Sprintf("%s field is too short, less than %d", fieldName, minLen)
@@ -131,11 +145,11 @@ func checkLen(fieldName, fieldValue string, minLen, maxLen int) string {
 }
 
 func checkUsername(username string) string {
-	return checkLen("Username", username, 3, 20)
+	return CheckLen("Username", username, 3, 20)
 }
 
 func checkPassword(password string) string {
-	return checkLen("Password", password, 6, 50)
+	return CheckLen("Password", password, 6, 50)
 }
 
 func checkEmail(email string) string {
@@ -173,8 +187,8 @@ func checkEmailExist(email string) string {
 	return ""
 }
 
-// checkLogin()
-func checkLogin(username, password string) []string {
+// CheckLogin()
+func CheckLogin(username, password string) []string {
 	var errs []string
 	if errCheck := checkUsername(username); len(errCheck) > 0 {
 		errs = append(errs, errCheck)
@@ -188,8 +202,8 @@ func checkLogin(username, password string) []string {
 	return errs
 }
 
-// checkRegister()
-func checkRegister(username, email, pwd1, pwd2 string) []string {
+// CheckRegister()
+func CheckRegister(username, email, pwd1, pwd2 string) []string {
 	var errs []string
 	if pwd1 != pwd2 {
 		errs = append(errs, "2 password does not match")
@@ -212,7 +226,7 @@ func checkRegister(username, email, pwd1, pwd2 string) []string {
 	return errs
 }
 
-func checkResetPasswordRequest(email string) []string {
+func CheckResetPasswordRequest(email string) []string {
 	var errs []string
 	if errCheck := checkEmail(email); len(errCheck) > 0 {
 		errs = append(errs, errCheck)
@@ -223,7 +237,7 @@ func checkResetPasswordRequest(email string) []string {
 	return errs
 }
 
-func checkResetPassword(pwd1, pwd2 string) []string {
+func CheckResetPassword(pwd1, pwd2 string) []string {
 	var errs []string
 	if pwd1 != pwd2 {
 		errs = append(errs, "2 password does not match")
@@ -234,18 +248,18 @@ func checkResetPassword(pwd1, pwd2 string) []string {
 	return errs
 }
 
-// addUser()
-func addUser(username, password, email string) error {
+// AddUser()
+func AddUser(username, password, email string) error {
 	return dto.AddUser(username, password, email)
 }
 
-func setFlash(w http.ResponseWriter, r *http.Request, message string) {
+func SetFlash(w http.ResponseWriter, r *http.Request, message string) {
 	session, _ := store.Get(r, sessionName)
 	session.AddFlash(message, flashName)
 	session.Save(r, w)
 }
 
-func getFlash(w http.ResponseWriter, r *http.Request) string {
+func GetFlash(w http.ResponseWriter, r *http.Request) string {
 	session, _ := store.Get(r, sessionName)
 	fm := session.Flashes(flashName)
 	if fm == nil {
@@ -255,7 +269,7 @@ func getFlash(w http.ResponseWriter, r *http.Request) string {
 	return fmt.Sprintf("%v", fm[0])
 }
 
-func getPage(r *http.Request) int {
+func GetPage(r *http.Request) int {
 	url := r.URL         // net/url.URL
 	query := url.Query() // Values (map[string][]string)
 
@@ -273,8 +287,8 @@ func getPage(r *http.Request) int {
 
 // Email
 
-// sendEmail func
-func sendEmail(target, subject, content string) {
+// SendEmail func
+func SendEmail(target, subject, content string) {
 	server, port, usr, pwd := config.GetSMTPConfig()
 	d := gomail.NewDialer(server, port, usr, pwd)
 	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go-mega-code-1.3/dto"
+	"go-mega-code-1.3/utils"
 	"html/template"
 	"log"
 	"net/http"
@@ -17,19 +18,19 @@ func (h home) registerRoutes() {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notfoundHandler)
 
-	r.HandleFunc("/logout", middleAuth(logoutHandler))
+	r.HandleFunc("/logout", utils1.MiddleAuth(logoutHandler))
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/register", registerHandler)
-	r.HandleFunc("/user/{username}", middleAuth(profileHandler))
-	r.HandleFunc("/follow/{username}", middleAuth(followHandler))
-	r.HandleFunc("/unfollow/{username}", middleAuth(unFollowHandler))
-	r.HandleFunc("/profile_edit", middleAuth(profileEditHandler))
-	r.HandleFunc("/explore", middleAuth(exploreHandler))
+	r.HandleFunc("/user/{username}", utils1.MiddleAuth(profileHandler))
+	r.HandleFunc("/follow/{username}", utils1.MiddleAuth(followHandler))
+	r.HandleFunc("/unfollow/{username}", utils1.MiddleAuth(unFollowHandler))
+	r.HandleFunc("/profile_edit", utils1.MiddleAuth(profileEditHandler))
+	r.HandleFunc("/explore", utils1.MiddleAuth(exploreHandler))
 	r.HandleFunc("/reset_password_request", resetPasswordRequestHandler)
 	r.HandleFunc("/reset_password/{token}", resetPasswordHandler)
 	r.HandleFunc("/user/{username}/popup", popupHandler)
 	r.HandleFunc("/404", notfoundHandler)
-	r.HandleFunc("/", middleAuth(indexHandler))
+	r.HandleFunc("/", utils1.MiddleAuth(indexHandler))
 
 	http.Handle("/", r)
 }
@@ -38,19 +39,19 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	tpName := "index.html"
 	vop := dto.IndexViewModelOp{}
 
-	page := getPage(r)
-	username, _ := getSessionUser(r)
+	page := utils1.GetPage(r)
+	username, _ := utils1.GetSessionUser(r)
 	if r.Method == http.MethodGet {
-		flash := getFlash(w, r)
+		flash := utils1.GetFlash(w, r)
 		v := vop.GetVM(username, flash, page, pageLimit)
 		templates[tpName].Execute(w, &v)
 	}
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 		body := r.Form.Get("body")
-		errMessage := checkLen("Post", body, 1, 180)
+		errMessage := utils1.CheckLen("Post", body, 1, 180)
 		if errMessage != "" {
-			setFlash(w, r, errMessage)
+			utils1.SetFlash(w, r, errMessage)
 		} else {
 			err := dto.CreatePost(username, body)
 			if err != nil {
@@ -76,13 +77,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		username := r.Form.Get("username")
 		password := r.Form.Get("password")
 
-		errs := checkLogin(username, password)
+		errs := utils1.CheckLogin(username, password)
 		v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
 			templates[tpName].Execute(w, &v)
 		} else {
-			setSessionUser(w, r, username)
+			utils1.SetSessionUser(w, r, username)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		}
 	}
@@ -103,25 +104,25 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		pwd1 := r.Form.Get("pwd1")
 		pwd2 := r.Form.Get("pwd2")
 
-		errs := checkRegister(username, email, pwd1, pwd2)
+		errs := utils1.CheckRegister(username, email, pwd1, pwd2)
 		v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
 			templates[tpName].Execute(w, &v)
 		} else {
-			if err := addUser(username, pwd1, email); err != nil {
+			if err := utils1.AddUser(username, pwd1, email); err != nil {
 				log.Println("add User error:", err)
 				w.Write([]byte("Error insert database"))
 				return
 			}
-			setSessionUser(w, r, username)
+			utils1.SetSessionUser(w, r, username)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 		}
 	}
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	clearSession(w, r)
+	utils1.ClearSession(w, r)
 	http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 }
 
@@ -129,13 +130,13 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 	tpName := "profile.html"
 	vars := mux.Vars(r)
 	pUser := vars["username"]
-	sUser, _ := getSessionUser(r)
-	page := getPage(r)
+	sUser, _ := utils1.GetSessionUser(r)
+	page := utils1.GetPage(r)
 	vop := dto.ProfileViewModelOp{}
 	v, err := vop.GetVM(sUser, pUser, page, pageLimit)
 	if err != nil {
 		msg := fmt.Sprintf("user ( %s ) does not exist", pUser)
-		setFlash(w, r, msg)
+		utils1.SetFlash(w, r, msg)
 		http.Redirect(w, r, "/404", http.StatusSeeOther)
 		return
 	}
@@ -144,7 +145,7 @@ func profileHandler(w http.ResponseWriter, r *http.Request) {
 
 func profileEditHandler(w http.ResponseWriter, r *http.Request) {
 	tpName := "profile_edit.html"
-	username, _ := getSessionUser(r)
+	username, _ := utils1.GetSessionUser(r)
 	vop := dto.ProfileEditViewModelOp{}
 	v := vop.GetVM(username)
 	if r.Method == http.MethodGet {
@@ -170,7 +171,7 @@ func profileEditHandler(w http.ResponseWriter, r *http.Request) {
 func followHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pUser := vars["username"]
-	sUser, _ := getSessionUser(r)
+	sUser, _ := utils1.GetSessionUser(r)
 
 	err := dto.Follow(sUser, pUser)
 	if err != nil {
@@ -184,7 +185,7 @@ func followHandler(w http.ResponseWriter, r *http.Request) {
 func unFollowHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	pUser := vars["username"]
-	sUser, _ := getSessionUser(r)
+	sUser, _ := utils1.GetSessionUser(r)
 
 	err := dto.UnFollow(sUser, pUser)
 	if err != nil {
@@ -198,8 +199,8 @@ func unFollowHandler(w http.ResponseWriter, r *http.Request) {
 func exploreHandler(w http.ResponseWriter, r *http.Request) {
 	tpName := "explore.html"
 	vop := dto.ExploreViewModelOp{}
-	username, _ := getSessionUser(r)
-	page := getPage(r)
+	username, _ := utils1.GetSessionUser(r)
+	page := utils1.GetPage(r)
 	v := vop.GetVM(username, page, pageLimit)
 	templates[tpName].Execute(w, &v)
 }
@@ -216,7 +217,7 @@ func resetPasswordRequestHandler(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		email := r.Form.Get("email")
 
-		errs := checkResetPasswordRequest(email)
+		errs := utils1.CheckResetPasswordRequest(email)
 		v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
@@ -235,7 +236,7 @@ func resetPasswordRequestHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			content := contentByte.String()
-			go sendEmail(email, "Reset Password", content)
+			go utils1.SendEmail(email, "Reset Password", content)
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 		}
 	}
@@ -263,7 +264,7 @@ func resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		pwd1 := r.Form.Get("pwd1")
 		pwd2 := r.Form.Get("pwd2")
 
-		errs := checkResetPassword(pwd1, pwd2)
+		errs := utils1.CheckResetPassword(pwd1, pwd2)
 		v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
@@ -283,7 +284,7 @@ func popupHandler(w http.ResponseWriter, r *http.Request) {
 	tpName := "popup.html"
 	vars := mux.Vars(r)
 	pUser := vars["username"]
-	sUser, _ := getSessionUser(r)
+	sUser, _ := utils1.GetSessionUser(r)
 	vop := dto.ProfileViewModelOp{}
 	v, err := vop.GetPopupVM(sUser, pUser)
 	if err != nil {
@@ -295,7 +296,7 @@ func popupHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func notfoundHandler(w http.ResponseWriter, r *http.Request) {
-	flash := getFlash(w, r)
+	flash := utils1.GetFlash(w, r)
 	message := dto.NotFoundMessage{Flash: flash}
 	tpl, _ := template.ParseFiles("templates/404.html")
 	tpl.Execute(w, &message)
