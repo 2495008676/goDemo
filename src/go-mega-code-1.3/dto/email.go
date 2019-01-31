@@ -1,4 +1,4 @@
-package vm
+package dto
 
 import (
 	"go-mega-code-1.3/config"

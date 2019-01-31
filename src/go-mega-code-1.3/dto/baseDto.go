@@ -1,4 +1,4 @@
-package vm
+package dto
 
 // BaseViewModel struct
 type BaseViewModel struct {

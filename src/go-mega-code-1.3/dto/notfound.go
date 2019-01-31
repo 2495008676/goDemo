@@ -1,4 +1,4 @@
-package vm
+package dto
 
 // NotFoundMessage struct
 type NotFoundMessage struct {

@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"go-mega-code-1.3/config"
-	"go-mega-code-1.3/vm"
+	"go-mega-code-1.3/dto"
+	"go-mega-code-1.3/model"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -16,6 +17,23 @@ import (
 
 	gomail "gopkg.in/gomail.v2"
 )
+
+func middleAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username, err := getSessionUser(r)
+		log.Println("middle:", username)
+		if username != "" {
+			log.Println("Last seen:", username)
+			model.UpdateLastSeen(username)
+		}
+		if err != nil {
+			log.Println("middle get session err and redirect to login")
+			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	}
+}
 
 // PopulateTemplates func
 // Create map template name to template.Template
@@ -128,28 +146,28 @@ func checkEmail(email string) string {
 }
 
 func checkUserPassword(username, password string) string {
-	if !vm.CheckLogin(username, password) {
+	if !dto.CheckLogin(username, password) {
 		return fmt.Sprintf("Username and password is not correct.")
 	}
 	return ""
 }
 
 func checkUserExist(username string) string {
-	if vm.CheckUserExist(username) {
+	if dto.CheckUserExist(username) {
 		return fmt.Sprintf("Username already exist, please choose another username")
 	}
 	return ""
 }
 
 func checkEmailExistRegister(email string) string {
-	if vm.CheckUserExist(email) {
+	if dto.CheckUserExist(email) {
 		return fmt.Sprintf("Email has registered by others, please choosse another email.")
 	}
 	return ""
 }
 
 func checkEmailExist(email string) string {
-	if !vm.CheckEmailExist(email) {
+	if !dto.CheckEmailExist(email) {
 		return fmt.Sprintf("Email does not register yet.Please Check email.")
 	}
 	return ""
@@ -218,7 +236,7 @@ func checkResetPassword(pwd1, pwd2 string) []string {
 
 // addUser()
 func addUser(username, password, email string) error {
-	return vm.AddUser(username, password, email)
+	return dto.AddUser(username, password, email)
 }
 
 func setFlash(w http.ResponseWriter, r *http.Request, message string) {
