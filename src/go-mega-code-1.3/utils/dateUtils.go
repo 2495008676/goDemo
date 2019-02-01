@@ -1,33 +1,18 @@
-package model
+package utils1
 
 import (
 	"bytes"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"time"
 )
 
-// GeneratePasswordHash : Use MD5
-func GeneratePasswordHash(pwd string) string {
-	return Md5(pwd)
-}
-
-// Md5 func
-func Md5(origin string) string {
-	hasher := md5.New()
-	hasher.Write([]byte(origin))
-	return hex.EncodeToString(hasher.Sum(nil))
-}
-
 const (
-	minute  = 1
-	hour    = minute * 60
-	day     = hour * 24
-	month   = day * 30
-	year    = day * 365
-	quarter = year / 4
+	minute = 1
+	hour   = minute * 60
+	day    = hour * 24
+	month  = day * 30
+	year   = day * 365
 )
 
 // FromDuration returns a friendly string representing an approximation of the

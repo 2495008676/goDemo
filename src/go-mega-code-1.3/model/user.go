@@ -2,10 +2,12 @@ package model
 
 import (
 	"fmt"
+	"go-mega-code-1.3/utils"
 	"log"
+	"net/http"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 )
 
 // User struct
@@ -23,17 +25,17 @@ type User struct {
 
 // SetPassword func: Set PasswordHash
 func (u *User) SetPassword(password string) {
-	u.PasswordHash = GeneratePasswordHash(password)
+	u.PasswordHash = utils1.GeneratePasswordHash(password)
 }
 
 // SetAvatar func: Set PasswordHash
 func (u *User) SetAvatar(email string) {
-	u.Avatar = fmt.Sprintf("https://www.gravatar.com/avatar/%s?d=identicon", Md5(email))
+	u.Avatar = fmt.Sprintf("https://www.gravatar.com/avatar/%s?d=identicon", utils1.Md5(email))
 }
 
 // CheckPassword func
 func (u *User) CheckPassword(password string) bool {
-	return GeneratePasswordHash(password) == u.PasswordHash
+	return utils1.GeneratePasswordHash(password) == u.PasswordHash
 }
 
 // Follow func
@@ -214,6 +216,84 @@ func UpdateAboutMe(username, text string) error {
 
 // UpdatePassword func
 func UpdatePassword(username, password string) error {
-	contents := map[string]interface{}{"password_hash": Md5(password)}
+	contents := map[string]interface{}{"password_hash": utils1.Md5(password)}
 	return UpdateUserByUsername(username, contents)
+}
+
+// CheckLogin func
+func CheckLogin(username, password string) bool {
+	user, err := GetUserByUsername(username)
+	if err != nil {
+		log.Println("Can not find username: ", username)
+		log.Println("Error:", err)
+		return false
+	}
+	return user.CheckPassword(password)
+}
+
+// CheckUserExist func
+func CheckUserExist(username string) bool {
+	_, err := GetUserByUsername(username)
+	if err != nil {
+		log.Println("Can not find username: ", username)
+		return false
+	}
+	return true
+}
+
+// CheckRegister()
+func CheckRegister(username, email, pwd1, pwd2 string) []string {
+	var errs []string
+	if pwd1 != pwd2 {
+		errs = append(errs, "2 password does not match")
+	}
+	if errCheck := utils1.CheckLen("Username", username, 3, 20); len(errCheck) > 0 {
+		errs = append(errs, errCheck)
+	}
+	if errCheck := utils1.CheckLen("pwd1", pwd1, 6, 50); len(errCheck) > 0 {
+		errs = append(errs, errCheck)
+	}
+	if errCheck := utils1.CheckEmail(email); len(errCheck) > 0 {
+		errs = append(errs, errCheck)
+	}
+	return errs
+}
+
+func CheckResetPasswordRequest(email string) []string {
+	var errs []string
+	if errCheck := utils1.CheckEmail(email); len(errCheck) > 0 {
+		errs = append(errs, errCheck)
+	}
+	return errs
+}
+
+func CheckResetPassword(pwd1, pwd2 string) []string {
+	var errs []string
+	if pwd1 != pwd2 {
+		errs = append(errs, "2 password does not match")
+	}
+	if errCheck := utils1.CheckLen("pwd1", pwd1, 6, 50); len(errCheck) > 0 {
+		errs = append(errs, errCheck)
+	}
+	return errs
+}
+
+/**
+路由是否登陆判断
+*/
+func MiddleAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username, err := utils1.GetSessionUser(r)
+		log.Println("middle:", username)
+		if username != "" {
+			log.Println("Last seen:", username)
+			UpdateLastSeen(username)
+		}
+		if err != nil {
+			log.Println("middle get session err and redirect to login")
+			http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	}
 }

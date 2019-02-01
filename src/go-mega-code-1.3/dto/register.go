@@ -1,10 +1,5 @@
 package dto
 
-import (
-	"go-mega-code-1.3/model"
-	"log"
-)
-
 // RegisterViewModel struct
 type RegisterViewModel struct {
 	LoginViewModel
@@ -18,19 +13,4 @@ func (RegisterViewModelOp) GetVM() RegisterViewModel {
 	v := RegisterViewModel{}
 	v.SetTitle("Register")
 	return v
-}
-
-// CheckUserExist func
-func CheckUserExist(username string) bool {
-	_, err := model.GetUserByUsername(username)
-	if err != nil {
-		log.Println("Can not find username: ", username)
-		return false
-	}
-	return true
-}
-
-// AddUser func
-func AddUser(username, password, email string) error {
-	return model.AddUser(username, password, email)
 }

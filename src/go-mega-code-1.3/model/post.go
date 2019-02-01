@@ -1,6 +1,7 @@
 package model
 
 import (
+	"go-mega-code-1.3/utils"
 	"time"
 )
 
@@ -15,7 +16,7 @@ type Post struct {
 
 // FormattedTimeAgo func
 func (p *Post) FormattedTimeAgo() string {
-	return FromTime(*p.Timestamp)
+	return utils1.FromTime(*p.Timestamp)
 }
 
 // GetPostsByUserID func

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go-mega-code-1.3/dto"
+	"go-mega-code-1.3/model"
 	"go-mega-code-1.3/utils"
 	"html/template"
 	"log"
@@ -18,19 +19,19 @@ func (h home) registerRoutes() {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notfoundHandler)
 
-	r.HandleFunc("/logout", utils1.MiddleAuth(logoutHandler))
+	r.HandleFunc("/logout", model.MiddleAuth(logoutHandler))
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/register", registerHandler)
-	r.HandleFunc("/user/{username}", utils1.MiddleAuth(profileHandler))
-	r.HandleFunc("/follow/{username}", utils1.MiddleAuth(followHandler))
-	r.HandleFunc("/unfollow/{username}", utils1.MiddleAuth(unFollowHandler))
-	r.HandleFunc("/profile_edit", utils1.MiddleAuth(profileEditHandler))
-	r.HandleFunc("/explore", utils1.MiddleAuth(exploreHandler))
+	r.HandleFunc("/user/{username}", model.MiddleAuth(profileHandler))
+	r.HandleFunc("/follow/{username}", model.MiddleAuth(followHandler))
+	r.HandleFunc("/unfollow/{username}", model.MiddleAuth(unFollowHandler))
+	r.HandleFunc("/profile_edit", model.MiddleAuth(profileEditHandler))
+	r.HandleFunc("/explore", model.MiddleAuth(exploreHandler))
 	r.HandleFunc("/reset_password_request", resetPasswordRequestHandler)
 	r.HandleFunc("/reset_password/{token}", resetPasswordHandler)
 	r.HandleFunc("/user/{username}/popup", popupHandler)
 	r.HandleFunc("/404", notfoundHandler)
-	r.HandleFunc("/", utils1.MiddleAuth(indexHandler))
+	r.HandleFunc("/", model.MiddleAuth(indexHandler))
 
 	http.Handle("/", r)
 }
@@ -75,10 +76,10 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 		username := r.Form.Get("username")
-		password := r.Form.Get("password")
-
-		errs := utils1.CheckLogin(username, password)
-		v.AddError(errs...)
+		//password := r.Form.Get("password")
+		//
+		//errs := utils1.CheckLogin(username, password)
+		//v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
 			templates[tpName].Execute(w, &v)
@@ -104,13 +105,13 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		pwd1 := r.Form.Get("pwd1")
 		pwd2 := r.Form.Get("pwd2")
 
-		errs := utils1.CheckRegister(username, email, pwd1, pwd2)
+		errs := model.CheckRegister(username, email, pwd1, pwd2)
 		v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
 			templates[tpName].Execute(w, &v)
 		} else {
-			if err := utils1.AddUser(username, pwd1, email); err != nil {
+			if err := model.AddUser(username, pwd1, email); err != nil {
 				log.Println("add User error:", err)
 				w.Write([]byte("Error insert database"))
 				return
@@ -217,7 +218,7 @@ func resetPasswordRequestHandler(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		email := r.Form.Get("email")
 
-		errs := utils1.CheckResetPasswordRequest(email)
+		errs := model.CheckResetPasswordRequest(email)
 		v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
@@ -264,7 +265,7 @@ func resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		pwd1 := r.Form.Get("pwd1")
 		pwd2 := r.Form.Get("pwd2")
 
-		errs := utils1.CheckResetPassword(pwd1, pwd2)
+		errs := model.CheckResetPassword(pwd1, pwd2)
 		v.AddError(errs...)
 
 		if len(v.Errs) > 0 {
