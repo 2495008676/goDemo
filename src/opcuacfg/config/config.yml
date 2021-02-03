@@ -1,6 +1,0 @@
-mysql:
-  host: localhost
-  db: opcuacfg
-  user: root
-  password:
-  charset: utf8
