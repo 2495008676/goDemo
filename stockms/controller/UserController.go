@@ -11,19 +11,19 @@ import (
  * r.PostFormValue  : 可以解析 Post/PUT Content-Type=application/x-www-form-urlencoded 或 Content-Type=multipart/form-data
  */
 
-type UserConterller struct {
+type UserController struct {
 }
 
 var userService = new(service.UserService)
 
-func (p *UserConterller) Router(router *framework.RouterHandler) {
+func (p *UserController) Router(router *framework.RouterHandler) {
 	router.Router("/register", p.register)
 	router.Router("/login", p.login)
 	router.Router("/findAll", p.findAll)
 }
 
 //POST Content-Type=application/x-www-form-urlencoded
-func (p *UserConterller) register(w http.ResponseWriter, r *http.Request) {
+func (p *UserController) register(w http.ResponseWriter, r *http.Request) {
 	username := r.PostFormValue("username")
 	password := r.PostFormValue("password")
 	if utils.Empty(username) || utils.Empty(password) {
@@ -39,7 +39,7 @@ func (p *UserConterller) register(w http.ResponseWriter, r *http.Request) {
 }
 
 //POST Content-Type=application/x-www-form-urlencoded
-func (p *UserConterller) login(w http.ResponseWriter, r *http.Request) {
+func (p *UserController) login(w http.ResponseWriter, r *http.Request) {
 	username := r.PostFormValue("username")
 	password := r.PostFormValue("password")
 	if utils.Empty(username) || utils.Empty(password) {
@@ -60,7 +60,7 @@ func (p *UserConterller) login(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET/POST
-func (p *UserConterller) findAll(w http.ResponseWriter, r *http.Request) {
+func (p *UserController) findAll(w http.ResponseWriter, r *http.Request) {
 	users := userService.SelectAllUser()
 	framework.ResultJsonOk(w, users)
 }

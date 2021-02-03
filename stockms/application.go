@@ -27,5 +27,5 @@ func main() {
 }
 
 func RegisterRouter(handler *framework.RouterHandler) {
-	new(controller.UserConterller).Router(handler)
+	new(controller.UserController).Router(handler)
 }
